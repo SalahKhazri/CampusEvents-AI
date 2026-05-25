@@ -1,0 +1,42 @@
+# =============================================================================
+# .dockerignore - Exclure les fichiers inutiles du contexte Docker
+# =============================================================================
+
+# Dart/Flutter build artifacts
+build/
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Git
+.git/
+.gitignore
+
+# Android/iOS (pas besoin pour web)
+android/
+ios/
+
+# Test
+test/
+coverage/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Assets (on les garde mais on peut les exclure s'ils sont trop lourds)
+# assets/

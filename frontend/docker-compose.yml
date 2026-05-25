@@ -1,0 +1,45 @@
+# =============================================================================
+# CampusEvents AI - Docker Compose
+# =============================================================================
+# Ce fichier configure UNIQUEMENT le frontend Flutter Web dans Docker.
+# Le backend FastAPI et Ollama restent installés LOCALEMENT.
+#
+# Architecture :
+#   - Flutter Web (Docker) : port 3000
+#   - FastAPI (local)      : port 8000
+#   - Ollama (local)       : port 11434
+#
+# Le frontend communique avec les services locaux via host.docker.internal
+# =============================================================================
+
+services:
+  flutter_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: campus_events_flutter
+    ports:
+      - "3000:3000"
+    volumes:
+      # Monter TOUT le répertoire frontend pour le hot reload
+      - .:/app
+      # Éviter de monter les dossiers de build (performance)
+      - /app/build
+      - /app/.dart_tool
+      - /app/.packages
+      - /app/.flutter-plugins
+      - /app/.flutter-plugins-dependencies
+    environment:
+      # Permettre l'accès aux services locaux (FastAPI, Ollama)
+      - DOCKER_HOST_IP=host.docker.internal
+      - FLUTTER_WEB_PORT=3000
+      - FLUTTER_WEB_HOSTNAME=0.0.0.0
+    # Activer le mode interactif pour le hot reload (appuyer sur R)
+    stdin_open: true
+    tty: true
+    # Redémarrer toujours sauf si arrêté explicitement
+    restart: unless-stopped
+    # Ajouter le réseau host pour faciliter l'accès aux services locaux
+    # Sur Windows/Mac, host.docker.internal est automatiquement disponible
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
