@@ -1,0 +1,553 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage[french]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{tabularx}
+\usepackage{tikz}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{caption}
+
+% Page geometry
+\geometry{top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm}
+
+% Title page
+\title{\textbf{CampusEvents AI}\\[0.5cm]
+\large Application Mobile de Gestion d'Événements Universitaires\\[0.3cm]
+Avec Assistant IA Intelligent}
+\author{Votre Nom}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% =============================================================================
+\chapter{Introduction}
+% =============================================================================
+
+\section{Contexte du projet}
+CampusEvents AI est une application mobile développée dans le cadre de notre formation en développement mobile. Elle vise à moderniser la gestion des événements universitaires en offrant une plateforme intuitive pour les étudiants et les administrateurs.
+
+L'objectif principal est de centraliser la gestion des événements (conférences, ateliers, compétitions, formations, activités culturelles et sportives) tout en intégrant un assistant IA capable de répondre aux requêtes en langage naturel.
+
+\section{Technologies utilisées}
+
+\subsection*{Backend}
+\begin{itemize}
+    \item \textbf{FastAPI 0.115.0} --- Framework REST Python moderne et performant
+    \item \textbf{SQLAlchemy 2.0.35} --- ORM pour la gestion de la base de données
+    \item \textbf{SQLite} --- Base de données légère embarquée
+    \item \textbf{Ollama + Llama 3} --- Modèle de langage local pour l'assistant IA
+    \item \textbf{Uvicorn 0.30.6} --- Serveur ASGI
+    \item \textbf{Pydantic 2.9.2} --- Validation des données
+    \item \textbf{HTTPX 0.27.2} --- Client HTTP pour les appels à l'API Ollama
+\end{itemize}
+
+\subsection*{Frontend}
+\begin{itemize}
+    \item \textbf{Flutter 3.44.0 / Dart 3.12.0} --- Framework UI multi-plateforme
+    \item \textbf{Riverpod 2.6.1} --- Gestion d'état déclarative
+    \item \textbf{GoRouter 14.8.1} --- Routage déclaratif avec redirection d'auth
+    \item \textbf{Dio 5.9.2} --- Client HTTP puissant
+    \item \textbf{SharedPreferences} --- Stockage local persistant
+    \item \textbf{Google Fonts (Poppins)} --- Typographie moderne
+    \item \textbf{Material 3} --- Design system Google
+\end{itemize}
+
+\subsection*{Infrastructure}
+\begin{itemize}
+    \item \textbf{Docker / Docker Compose} --- Conteneurisation du frontend web
+    \item \textbf{Windows 10+} --- Environnement de développement
+    \item \textbf{Android 14} --- Plateforme cible mobile
+\end{itemize}
+
+% =============================================================================
+\chapter{Architecture du Projet}
+% =============================================================================
+
+\section{Architecture globale}
+
+Le projet suit une architecture client-serveur classique :
+
+\begin{itemize}
+    \item \textbf{Frontend} : Application Flutter (mobile/web) qui communique avec l'API REST.
+    \item \textbf{Backend} : API FastAPI qui gère la logique métier, la persistance et l'intégration avec l'IA.
+    \item \textbf{IA Locale} : Serveur Ollama avec le modèle Llama 3, hébergé localement.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Schema_Architecture_Globale
+% Insérez ici le diagramme d'architecture globale (client -> serveur -> IA)
+% Exemple: \includegraphics[width=\textwidth]{screenshots/architecture.png}
+\caption{Architecture globale de l'application}
+\end{figure}
+
+\section{Structure du Backend}
+
+Le backend est organisé selon une architecture en couches :
+
+\begin{verbatim}
+backend/
+  run.py                        # Point d'entrée (uvicorn)
+  app/
+    main.py                     # Configuration FastAPI, CORS, routes
+    config.py                   # Paramètres (Ollama, DB, credentials)
+    database.py                 # Connexion SQLAlchemy
+    seed.py                     # Données de démonstration (8 événements)
+    models/                     # Modèles SQLAlchemy
+      event.py, favorite.py, registration.py, llm_result.py
+    schemas/                    # Schémas Pydantic (validation)
+      auth.py, event.py, favorite.py, registration.py, llm.py
+    repositories/               # Couche d'accès aux données
+      event_repository.py, favorite_repository.py,
+      registration_repository.py, llm_repository.py
+    services/                   # Logique métier
+      auth_service.py, event_service.py, favorite_service.py,
+      registration_service.py, llm_service.py
+    routers/                    # Endpoints API
+      auth.py, events.py, favorites.py, registrations.py, llm.py
+\end{verbatim}
+
+\section{Structure du Frontend}
+
+Le frontend Flutter suit une architecture organisée par fonctionnalités :
+
+\begin{verbatim}
+frontend/lib/
+  main.dart                     # Point d'entrée
+  core/
+    constants.dart, helpers.dart, theme.dart
+  models/
+    event_model.dart, user_model.dart
+  services/
+    api_service.dart, session_service.dart
+  providers/                    # État global (Riverpod)
+    auth_provider, events_provider, favorites_provider,
+    registrations_provider, llm_provider
+  routes/app_router.dart        # GoRouter
+  widgets/                      # Composants réutilisables
+    app_drawer, event_card, empty_state, error_widget, loading_widget
+  features/
+    auth/login_screen.dart
+    admin/admin_dashboard, create_event_screen, edit_event_screen
+    student/home_screen, event_detail_screen,
+           favorites_screen, registrations_screen
+    ai_assistant/assistant_screen.dart
+\end{verbatim}
+
+% =============================================================================
+\chapter{Base de Données}
+% =============================================================================
+
+\section{Schéma relationnel}
+
+La base de données SQLite contient 4 tables :
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Schema_Base_Donnees
+% Insérez le diagramme ERD de la base de données
+% \includegraphics[width=\textwidth]{screenshots/erd.png}
+\caption{Schéma entité-relation de la base de données}
+\end{figure}
+
+\subsection*{Table \texttt{events}}
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\textbf{Colonne} & \textbf{Type} & \textbf{Contraintes} \\
+\hline
+id & Integer & PK, auto-incrément \\
+title & String(255) & NOT NULL \\
+description & Text & NOT NULL \\
+category & String(100) & NOT NULL \\
+start\_date\_time & DateTime & NOT NULL \\
+end\_date\_time & DateTime & NOT NULL \\
+location\_name & String(255) & NOT NULL \\
+location\_address & String(500) & NULLABLE \\
+organizer\_name & String(255) & NOT NULL \\
+capacity & Integer & NOT NULL \\
+tags & String(500) & NULLABLE \\
+image\_url & String(500) & NULLABLE \\
+is\_active & Boolean & Default True \\
+created\_at & DateTime & Default now \\
+updated\_at & DateTime & On update \\
+\hline
+\end{tabularx}
+
+\subsection*{Table \texttt{favorites}}
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\textbf{Colonne} & \textbf{Type} & \textbf{Contraintes} \\
+\hline
+id & Integer & PK, auto-incrément \\
+event\_id & Integer & FK → events.id, CASCADE \\
+user\_email & String(255) & NOT NULL \\
+created\_at & DateTime & Default now \\
+\hline
+\multicolumn{3}{|l|}{\small UNIQUE(event\_id, user\_email)} \\
+\hline
+\end{tabularx}
+
+\subsection*{Table \texttt{registrations}}
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\textbf{Colonne} & \textbf{Type} & \textbf{Contraintes} \\
+\hline
+id & Integer & PK, auto-incrément \\
+event\_id & Integer & FK → events.id, CASCADE \\
+user\_email & String(255) & NOT NULL \\
+registered\_at & DateTime & Default now \\
+is\_cancelled & Integer & Default 0 \\
+\hline
+\multicolumn{3}{|l|}{\small UNIQUE(event\_id, user\_email)} \\
+\hline
+\end{tabularx}
+
+\subsection*{Table \texttt{llm\_results} (Historique IA)}
+\begin{tabularx}{\textwidth}{|l|X|l|}
+\hline
+\textbf{Colonne} & \textbf{Type} & \textbf{Contraintes} \\
+\hline
+id & Integer & PK, auto-incrément \\
+user\_email & String(255) & NOT NULL \\
+query\_type & String(50) & NOT NULL \\
+query\_text & Text & NOT NULL \\
+response\_text & Text & NOT NULL \\
+created\_at & DateTime & Default now \\
+\hline
+\end{tabularx}
+
+% =============================================================================
+\chapter{API REST}
+% =============================================================================
+
+\section{Points d'accès}
+
+\subsection*{Authentification}
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\textbf{Méthode} & \textbf{Endpoint} & \textbf{Description} \\
+\hline
+POST & /api/auth/login & Authentification utilisateur \\
+\hline
+\end{tabularx}
+
+\subsection*{Événements}
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+\textbf{Méthode} & \textbf{Endpoint} & \textbf{Description} \\
+\hline
+GET & /api/events/ & Liste des événements actifs \\
+GET & /api/events/upcoming & Événements à venir \\
+GET & /api/events/past & Événements passés \\
+GET & /api/events/search?q= & Recherche textuelle \\
+GET & /api/events/category/\{cat\} & Filtre par catégorie \\
+GET & /api/events/categories & Liste des catégories \\
+GET & /api/events/\{id\} & Détail d'un événement \\
+POST & /api/events/ & Créer un événement (admin) \\
+PUT & /api/events/\{id\} & Modifier (admin) \\
+DELETE & /api/events/\{id\} & Supprimer (admin) \\
+\hline
+\end{tabularx}
+
+\subsection*{Favoris et Inscriptions}
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+GET & /api/favorites/ & Liste des favoris \\
+POST & /api/favorites/toggle & Ajouter/retirer favori \\
+GET & /api/registrations/ & Liste des inscriptions \\
+POST & /api/registrations/ & S'inscrire \\
+DELETE & /api/registrations/\{id\} & Annuler inscription \\
+\hline
+\end{tabularx}
+
+\subsection*{Assistant IA}
+
+\begin{tabularx}{\textwidth}{|l|l|X|}
+\hline
+POST & /api/llm/query & Envoyer requête à l'assistant \\
+\hline
+\end{tabularx}
+
+% =============================================================================
+\chapter{Fonctionnalités de l'Application}
+% =============================================================================
+
+\section{Authentification}
+
+L'application propose deux comptes de démonstration :
+
+\begin{itemize}
+    \item \textbf{Admin :} admin@campus.ma / admin123 (accès à la gestion des événements)
+    \item \textbf{Étudiant :} etudiant@campus.ma / etudiant123 (accès au catalogue et à l'assistant)
+\end{itemize}
+
+L'authentification est simplifiée : les identifiants sont vérifiés côté backend sans JWT. L'email est passé en en-tête HTTP pour les requêtes suivantes.
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Ecran_Connexion
+% Insérez la capture d'écran de l'écran de connexion
+% \includegraphics[width=0.4\textwidth]{screenshots/login.png}
+\caption{Écran de connexion}
+\end{figure}
+
+\section{Écran d'accueil étudiant}
+
+Le catalogue propose trois onglets : À venir, Passés, Tous. Une barre de recherche permet la recherche en temps réel, et des filtres par catégorie sont disponibles.
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Ecran_Accueil_Etudiant
+% Insérez la capture d'écran de l'accueil étudiant avec les onglets et la recherche
+% \includegraphics[width=0.4\textwidth]{screenshots/home.png}
+\caption{Écran d'accueil étudiant}
+\end{figure}
+
+\section{Détail d'un événement}
+
+Chaque événement affiche ses informations détaillées : titre, catégorie, dates, lieu, organisateur, capacité (inscrits/total), description et tags. L'étudiant peut ajouter aux favoris ou s'inscrire.
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Ecran_Detail_Evenement
+% Insérez la capture d'écran du détail d'un événement
+% \includegraphics[width=0.4\textwidth]{screenshots/event_detail.png}
+\caption{Détail d'un événement}
+\end{figure}
+
+\section{Gestion des événements (Admin)}
+
+L'administrateur peut créer, modifier et supprimer des événements via des formulaires complets avec validation.
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Ecran_Creation_Evenement
+% Insérez la capture d'écran du formulaire de création d'événement
+% \includegraphics[width=0.4\textwidth]{screenshots/create_event.png}
+\caption{Formulaire de création d'événement}
+\end{figure}
+
+\section{Favoris et Inscriptions}
+
+L'étudiant peut consulter ses événements favoris et ses inscriptions depuis des écrans dédiés.
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Ecran_Favoris
+% Insérez la capture d'écran de la liste des favoris
+% \includegraphics[width=0.4\textwidth]{screenshots/favorites.png}
+\caption{Liste des favoris}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Ecran_Inscriptions
+% Insérez la capture d'écran de la liste des inscriptions
+% \includegraphics[width=0.4\textwidth]{screenshots/registrations.png}
+\caption{Liste des inscriptions}
+\end{figure}
+
+\section{Assistant IA}
+
+L'assistant IA, propulsé par Llama 3 via Ollama, propose 4 modes :
+
+\begin{enumerate}
+    \item \textbf{Recherche} : Trouver des événements en langage naturel
+    \item \textbf{Recommandation} : Suggestions personnalisées basées sur les favoris
+    \item \textbf{Planning} : Organisation d'emploi du temps selon les contraintes
+    \item \textbf{Questions/Réponses} : Réponses sur le catalogue d'événements
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Assistant_IA_Recherche
+% Insérez la capture d'écran de l'assistant en mode Recherche
+% \includegraphics[width=0.4\textwidth]{screenshots/assistant_search.png}
+\caption{Assistant IA --- Mode Recherche}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Assistant_IA_Recommandation
+% Insérez la capture d'écran de l'assistant en mode Recommandation
+% \includegraphics[width=0.4\textwidth]{screenshots/assistant_reco.png}
+\caption{Assistant IA --- Mode Recommandation}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Assistant_IA_Planning
+% Insérez la capture d'écran de l'assistant en mode Planning
+% \includegraphics[width=0.4\textwidth]{screenshots/assistant_planning.png}
+\caption{Assistant IA --- Mode Planning}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Assistant_IA_Q&A
+% Insérez la capture d'écran de l'assistant en mode Questions
+% \includegraphics[width=0.4\textwidth]{screenshots/assistant_qa.png}
+\caption{Assistant IA --- Mode Questions/Réponses}
+\end{figure}
+
+% =============================================================================
+\chapter{Intégration de l'Intelligence Artificielle}
+% =============================================================================
+
+\section{Architecture de l'assistant IA}
+
+Le flux de traitement d'une requête IA suit les étapes suivantes :
+
+\begin{enumerate}
+    \item L'utilisateur envoie une requête en langage naturel depuis l'application Flutter.
+    \item Le backend FastAPI reçoit la requête via POST /api/llm/query.
+    \item Le \texttt{LlmService} construit un contexte à partir des événements disponibles (jusqu'à 50) ainsi que des favoris et inscriptions de l'utilisateur.
+    \item Un prompt spécialisé est généré selon le type de requête (search, recommendation, planning, qa).
+    \item Le prompt est envoyé à Ollama (http://localhost:11434/api/generate) avec le modèle Llama 3.
+    \item La réponse est analysée, sauvegardée dans la table \texttt{llm\_results} et renvoyée à l'utilisateur.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+% PLACEHOLDER_SCREENSHOT: Schema_Flux_IA
+% Insérez le diagramme de flux de l'assistant IA
+% \includegraphics[width=\textwidth]{screenshots/ia_flow.png}
+\caption{Flux de traitement d'une requête IA}
+\end{figure}
+
+\section{Exemple de prompt --- Mode Recherche}
+
+\begin{lstlisting}[frame=single, language=Python, basicstyle=\small\ttfamily]
+prompt = f'''
+Tu es un assistant IA specialise dans les evenements
+universitaires du campus.
+
+Contexte des evenements disponibles:
+{contexte}
+
+Question de l'etudiant: {requete}
+
+Cherche dans le catalogue les evenements qui correspondent
+a cette requete. Reponds en francais de maniere claire
+et structuree en listant les evenements pertinents avec
+leurs details (titre, date, lieu).
+Si aucun evenement ne correspond, propose des alternatives.
+'''
+\end{lstlisting}
+
+% =============================================================================
+\chapter{Installation et Déploiement}
+% =============================================================================
+
+\section{Prérequis}
+
+\begin{itemize}
+    \item \textbf{Python 3.10+} --- Pour le backend FastAPI
+    \item \textbf{Flutter 3.16+} --- Pour le frontend mobile
+    \item \textbf{Ollama} --- Serveur LLM local avec le modèle \texttt{llama3}
+    \item \textbf{Android SDK} (API 34+) --- Pour le déploiement mobile
+    \item \textbf{Docker Desktop} (optionnel) --- Pour le frontend web conteneurisé
+\end{itemize}
+
+\section{Lancement du projet}
+
+\subsection*{1. Backend FastAPI}
+\begin{lstlisting}[frame=single, basicstyle=\small\ttfamily]
+cd backend
+python -m venv venv
+venv\Scripts\activate    # Windows
+pip install -r requirements.txt
+python run.py
+# API disponible sur http://localhost:8000
+\end{lstlisting}
+
+\subsection*{2. Serveur Ollama}
+\begin{lstlisting}[frame=single, basicstyle=\small\ttfamily]
+ollama run llama3
+# API disponible sur http://localhost:11434
+\end{lstlisting}
+
+\subsection*{3. Frontend Flutter}
+\begin{lstlisting}[frame=single, basicstyle=\small\ttfamily]
+cd frontend
+flutter pub get
+flutter run                # Lancement interactif
+# ou sur un appareil specifique :
+flutter run -d R5CW60P81PJ # Exemple avec ID de telephone
+\end{lstlisting}
+
+\subsection*{4. Frontend Web avec Docker}
+\begin{lstlisting}[frame=single, basicstyle=\small\ttfamily]
+cd frontend
+docker compose up
+# Application disponible sur http://localhost:3000
+\end{lstlisting}
+
+% =============================================================================
+\chapter{Conclusion}
+% =============================================================================
+
+\section{Bilan}
+
+CampusEvents AI démontre la faisabilité d'une application mobile universitaire complète intégrant :
+
+\begin{itemize}
+    \item Une \textbf{interface moderne} avec Flutter et Material 3
+    \item Une \textbf{API REST robuste} avec FastAPI et SQLAlchemy
+    \item Un \textbf{assistant IA intelligent} en langage naturel via Ollama et Llama 3
+    \item Une \textbf{gestion complète} des événements, favoris et inscriptions
+    \item Une \textbf{expérience utilisateur} fluide avec thème clair/sombre
+\end{itemize}
+
+\section{Améliorations possibles}
+
+\begin{itemize}
+    \item Authentification sécurisée avec JWT et gestion des sessions
+    \intem{Base de données utilisateurs complète avec inscription
+    \item Notifications push pour rappels d'événements
+    \item Synchronisation calendrier (Google Calendar, Outlook)
+    \item Version iOS de l'application
+    \item Déploiement cloud du backend et de l'IA
+    \item Tests unitaires et d'intégration automatisés
+\end{itemize}
+
+% =============================================================================
+% LISTE DES PLACEHOLDERS POUR SCREENSHOTS
+% =============================================================================
+\chapter*{Annexe : Emplacements pour les captures d'écran}
+\addcontentsline{toc}{chapter}{Annexe}
+
+Voici la liste de tous les placeholders de captures d'écran dans ce rapport.
+Créez un dossier \texttt{screenshots/} à côté de ce fichier \texttt{.tex}
+et placez-y vos images.
+
+\begin{enumerate}
+    \item \textbf{Schema\_Architecture\_Globale} --- Diagramme d'architecture client-serveur-IA (page 3)
+    \item \textbf{Schema\_Base\_Donnees} --- Diagramme entité-relation des 4 tables (page 5)
+    \item \textbf{Ecran\_Connexion} --- Page de connexion avec champs email/mot de passe (page 8)
+    \item \textbf{Ecran\_Accueil\_Etudiant} --- Catalogue avec onglets et barre de recherche (page 9)
+    \item \textbf{Ecran\_Detail\_Evenement} --- Détail avec gradient, infos, favori, inscription (page 10)
+    \item \textbf{Ecran\_Creation\_Evenement} --- Formulaire admin de création d'événement (page 11)
+    \item \textbf{Ecran\_Favoris} --- Liste des événements favoris (page 12)
+    \item \textbf{Ecran\_Inscriptions} --- Liste des inscriptions (page 12)
+    \item \textbf{Assistant\_IA\_Recherche} --- Assistant en mode Recherche (page 14)
+    \item \textbf{Assistant\_IA\_Recommandation} --- Assistant en mode Recommandation (page 14)
+    \item \textbf{Assistant\_IA\_Planning} --- Assistant en mode Planning (page 14)
+    \item \textbf{Assistant\_IA\_Q\&A} --- Assistant en mode Questions/Réponses (page 14)
+    \item \textbf{Schema\_Flux\_IA} --- Diagramme de flux du traitement IA (page 16)
+\end{enumerate}
+
+\end{document}

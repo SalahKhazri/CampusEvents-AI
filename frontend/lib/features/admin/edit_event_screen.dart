@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:campus_events_ai/services/api_service.dart';
+import 'package:campus_events_ai/providers/auth_provider.dart';
 import 'package:campus_events_ai/providers/events_provider.dart';
 import 'package:campus_events_ai/core/constants.dart';
 import 'package:campus_events_ai/models/event_model.dart';

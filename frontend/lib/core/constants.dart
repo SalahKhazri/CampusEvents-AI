@@ -10,7 +10,7 @@ class AppConstants {
       final host = Uri.base.host;
       return 'http://$host:8000';
     }
-    if (Platform.isAndroid) return 'http://10.0.2.2:8000';
+    if (Platform.isAndroid) return 'http://192.168.188.177:8000';
     return 'http://localhost:8000';
   }
 
